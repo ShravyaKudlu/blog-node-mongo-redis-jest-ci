@@ -1,14 +1,17 @@
 language: node_js
 node_js:
-  - "14"
+  - "8"
+
+dist: trusty
 
 services:
   - mongodb
   - redis-server
 
 env:
-  - NODE_ENV=ci
-  - PORT=3000
+  global:
+    - NODE_ENV=ci
+    - PORT=3000
 
 cache:
   directories:
@@ -16,11 +19,19 @@ cache:
     - client/node_modules
 
 install:
+  - echo "Installing dependencies..."
   - npm install
+  - if [ -d client ]; then cd client && npm install && cd ..; fi
   - npm install -g wait-on
+
+before_script:
+  - echo "Building project..."
   - npm run build
 
 script:
-  - nohup npm run start &
+  - echo "Starting application..."
+  - nohup npm run start > app.log 2>&1 &
+  - echo "Waiting for server to be ready..."
   - wait-on http://localhost:3000
+  - echo "Running tests..."
   - npm run test
